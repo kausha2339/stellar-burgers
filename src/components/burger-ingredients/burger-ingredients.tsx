@@ -2,18 +2,26 @@ import { useState, useRef, useEffect, FC } from 'react';
 import { useInView } from 'react-intersection-observer';
 
 import { TTabMode } from '@utils-types';
-import { BurgerIngredientsUI } from '../ui/burger-ingredients';
+import { BurgerIngredientsUI, Preloader } from '@ui';
+import { useSelector } from '../../services/store';
+import {
+  getIngredients,
+  getIngredientsState,
+  getIngredientsLoadingState
+} from '../../slices/ingredient';
 
 export const BurgerIngredients: FC = () => {
-  /** TODO: взять переменные из стора */
-  const buns = [];
-  const mains = [];
-  const sauces = [];
+  const ingredients = useSelector(getIngredients),
+    loading = useSelector(getIngredientsLoadingState),
+    state = useSelector(getIngredientsState);
 
-  const [currentTab, setCurrentTab] = useState<TTabMode>('bun');
-  const titleBunRef = useRef<HTMLHeadingElement>(null);
-  const titleMainRef = useRef<HTMLHeadingElement>(null);
-  const titleSaucesRef = useRef<HTMLHeadingElement>(null);
+  const buns = ingredients.filter((ingredient) => ingredient.type === 'bun'),
+    mains = ingredients.filter((ingredient) => ingredient.type === 'main'),
+    sauces = ingredients.filter((ingredient) => ingredient.type === 'sauce');
+
+  const titleBunRef = useRef<HTMLHeadingElement>(null),
+    titleMainRef = useRef<HTMLHeadingElement>(null),
+    titleSaucesRef = useRef<HTMLHeadingElement>(null);
 
   const [bunsRef, inViewBuns] = useInView({
     threshold: 0
@@ -26,6 +34,8 @@ export const BurgerIngredients: FC = () => {
   const [saucesRef, inViewSauces] = useInView({
     threshold: 0
   });
+
+  const [currentTab, setCurrentTab] = useState<TTabMode>('bun');
 
   useEffect(() => {
     if (inViewBuns) {
@@ -47,7 +57,13 @@ export const BurgerIngredients: FC = () => {
       titleSaucesRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  return null;
+  if (state.error) {
+    return <p>Упс... что-то пошло не так...</p>;
+  }
+
+  if (loading) {
+    return <Preloader />;
+  }
 
   return (
     <BurgerIngredientsUI
